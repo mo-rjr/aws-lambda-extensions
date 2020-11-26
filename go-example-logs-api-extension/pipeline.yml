@@ -14,23 +14,23 @@ Parameters:
   DeployAccount:
     Description: AWS account number to deploy infrastructure to
     Type: AWS::SSM::Parameter::Value<String>
-    Default: "/nswws-dis/account/dev"
+    Default: "/nswws-meteo/account/dev"
   ServiceOwner:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: "/nswws-dis/service/owner"
+    Default: "/nswws-meteo/service/owner"
   ServiceCode:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: "/nswws-dis/service/code"
+    Default: "/nswws-meteo/service/code"
   ServiceName:
     Type: AWS::SSM::Parameter::Value<String>
-    Default: "/nswws-dis/service/name"
+    Default: "/nswws-meteo/service/name"
   ArtifactBucket:
     Description: The artifact bucket ssm
-    Type: String
-    Default: "/nswws-dis/artifact/bucket"
-  #  KmsKey:
-  #    Type: AWS::SSM::Parameter::Value<String>
-  #    Default: "/nswws-dis/kms/arn"
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/nswws-meteo/artifact/bucket"
+  KmsKey:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: "/nswws-meteo/kms/arn"
   # ------------------------
 Resources:
   DeployUpdateLastActedPipeline:
@@ -87,7 +87,7 @@ Resources:
                     "ServiceCode": "${ServiceCode}",
                     "ServiceName": "${ServiceName}",
                     "ArtifactBucket": "${ArtifactBucket}"
-                }
+                  }
             - Name: BuildProject
               RunOrder: 5
               ActionTypeId:
