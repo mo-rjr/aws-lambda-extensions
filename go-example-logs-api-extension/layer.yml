@@ -1,0 +1,6 @@
+Type: AWS::Lambda::LayerVersion
+Properties:
+  Content:
+    Content
+  Description: Lambda log extension
+  LayerName: String
