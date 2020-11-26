@@ -28,9 +28,9 @@ Parameters:
     Description: The artifact bucket ssm
     Type: String
     Default: "/nswws-dis/artifact/bucket"
-#  KmsKey:
-#    Type: AWS::SSM::Parameter::Value<String>
-#    Default: "/nswws-dis/kms/arn"
+  #  KmsKey:
+  #    Type: AWS::SSM::Parameter::Value<String>
+  #    Default: "/nswws-dis/kms/arn"
   # ------------------------
 Resources:
   DeployUpdateLastActedPipeline:
@@ -55,29 +55,13 @@ Resources:
                 Version: 1
               Configuration:
                 Owner: annesadleir
-                Repo: rjr-aws-lambda-base
+                Repo: aws-lambda-extensions
                 PollForSourceChanges: false
                 Branch: master
                 OAuthToken: '{{resolve:secretsmanager:/github/token:SecretString:mo-rjr}}'
-              Name: lambda_base_src
+              Name: extensions_src
               OutputArtifacts:
-                - Name: lambda_base_src
-              RunOrder: 1
-            - ActionTypeId:
-                Category: Source
-                Owner: ThirdParty
-                Provider: GitHub
-                Version: 1
-              Configuration:
-                Owner: annesadleir
-                Repo: update-last-acted
-                PollForSourceChanges: !Sub ${AutoSource}
-                Branch: !Sub ${GitBranch}
-                OAuthToken: '{{resolve:secretsmanager:/github/token:SecretString:mo-rjr}}'
-              Name: update_last_acted_src
-              OutputArtifacts:
-                - Name: update_last_acted_src
-              RunOrder: 1
+                - Name: extensions_src
         # ----------------------------------------------------------------------------------------------------------------------------
         - Name: Build
           Actions:
@@ -89,18 +73,21 @@ Resources:
                 Provider: CloudFormation
                 Version: '1'
               InputArtifacts:
-                - Name: update_last_acted_src
-                - Name: lambda_base_src
+                - Name: extensions_src
               Configuration:
                 ActionMode: REPLACE_ON_FAILURE
                 Capabilities: CAPABILITY_NAMED_IAM
                 RoleArn: !Sub arn:aws:iam::${AWS::AccountId}:role/PipelineAutomationRole
-                StackName: "update-last-acted-build-project"
-                TemplatePath: update_last_acted_src::iac/build-project.yml
+                StackName: "extension-build-project"
+                TemplatePath: extensions_src::go-example-logs-api-extension/build-project.yml
                 ParameterOverrides: !Sub |
                   {
-                    "DeployAccount": "${DeployAccount}"
-                  }
+                    "DeployAccount": "${DeployAccount}",
+                    "ServiceOwner": "${ServiceOwner}",
+                    "ServiceCode": "${ServiceCode}",
+                    "ServiceName": "${ServiceName}",
+                    "ArtifactBucket": "${ArtifactBucket}"
+                }
             - Name: BuildProject
               RunOrder: 5
               ActionTypeId:
@@ -109,19 +96,16 @@ Resources:
                 Version: "1"
                 Provider: CodeBuild
               InputArtifacts:
-                - Name: lambda_base_src
-                - Name: update_last_acted_src
+                - Name: extensions_src
               OutputArtifacts:
                 - Name: source_built
               Configuration:
-                ProjectName: "update-last-acted-build-project"
-                PrimarySource: update_last_acted_src
+                ProjectName: "extension-build-project"
 
         # ----------------------------------------------------------------------------------------------------------------------------
         - Name: Deploy
           Actions:
-            # Atom watcher
-            - Name: UpdateLastActedChangeSet
+            - Name: ExtensionLayerChangeSet
               RunOrder: 10
               ActionTypeId:
                 Category: Deploy
@@ -132,19 +116,18 @@ Resources:
                 - Name: source_built
               RoleArn: !Sub arn:aws:iam::${DeployAccount}:role/PipelineAutomationRole
               Configuration:
-                ChangeSetName: "update-last-acted-change-set"
-                StackName: "update-last-acted"
+                ChangeSetName: "extension-layer-change-set"
+                StackName: "extension-layer"
                 ActionMode: CHANGE_SET_REPLACE
                 RoleArn: !Sub arn:aws:iam::${DeployAccount}:role/PipelineAutomationRole
                 Capabilities: CAPABILITY_NAMED_IAM
-                TemplatePath: source_built::update-last-acted-graal.cf.yml
+                TemplatePath: source_built::go-example-logs-api-extension/built-extension.yml
                 ParameterOverrides: !Sub |
                   {
                     "ServiceOwner": "${ServiceOwner}",
                     "ServiceCode": "${ServiceCode}",
                     "ServiceName": "${ServiceName}"
                   }
-
             - Name: DeployAtomWatcherChangeSet
               RunOrder: 20
               RoleArn: !Sub arn:aws:iam::${DeployAccount}:role/PipelineAutomationRole
@@ -154,8 +137,8 @@ Resources:
                 Version: "1"
                 Provider: CloudFormation
               Configuration:
-                ChangeSetName: "update-last-acted-change-set"
-                StackName: "update-last-acted"
+                ChangeSetName: "extension-layer-change-set"
+                StackName: "extension-layer"
                 ActionMode: CHANGE_SET_EXECUTE
                 RoleArn: !Sub arn:aws:iam::${DeployAccount}:role/PipelineAutomationRole
                 Capabilities: CAPABILITY_NAMED_IAM

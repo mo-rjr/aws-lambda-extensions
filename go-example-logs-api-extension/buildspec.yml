@@ -10,4 +10,5 @@ phases:
       - zip -r extension.zip extensions/
 artifacts:
   files:
-    - update-last-acted-graal.cf.yml
+    - extension.zip
+    - go-example-logs-api-extension/built-extension.yml

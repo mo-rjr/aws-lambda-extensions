@@ -1,0 +1,19 @@
+AWSTemplateFormatVersion: 2010-09-09
+Transform: 'AWS::Serverless-2016-10-31'
+Description: Declares resources for this lambda layer
+Parameters:
+  ArtifactBucket:
+    Type: String
+  ServiceCode:
+    Type: String
+  ServiceName:
+    Type: String
+  ServiceOwner:
+    Type: String
+Resources:
+  Type: AWS::Lambda::LayerVersion
+  Properties:
+    Content:
+      S3Bucket: ${ArtifactBucket}
+      S3Key: extension.zip
+    Description: Lambda log extension

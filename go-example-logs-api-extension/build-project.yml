@@ -1,0 +1,42 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Build project
+Parameters:
+  DeployAccount:
+    Type: String
+    Description: Unique deployment name used to prefix buckets and other components
+  ServiceOwner:
+    Type: String
+  ServiceCode:
+    Type: String
+  ServiceName:
+    Type: String
+  ArtifactBucket:
+    Type: String
+Resources:
+  ExtensionBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      ServiceRole: !Sub arn:aws:iam::${AWS::AccountId}:role/PipelineAutomationRole
+      Name: "extension-build-project"
+      Artifacts:
+        NamespaceType: NONE
+        Packaging: NONE
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_MEDIUM
+        EnvironmentVariables:
+          - Name: LAMBDA_ARTIFACT_BUCKET
+            Value: !Ref ArtifactBucket
+        Image: aws/codebuild/golang:1.14
+        Type: LINUX_CONTAINER
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: go-example-logs-api-extension/buildspec.yml
+      Tags:
+        - Key: ServiceCode
+          Value: !Sub ${ServiceCode}
+        - Key: ServiceName
+          Value: !Sub ${ServiceName}
+        - Key: ServiceOwner
+          Value: !Sub ${ServiceOwner}
+      TimeoutInMinutes: 20
