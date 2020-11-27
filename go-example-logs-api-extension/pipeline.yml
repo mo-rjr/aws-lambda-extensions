@@ -57,7 +57,7 @@ Resources:
                 Owner: mo-rjr
                 Repo: aws-lambda-extensions
                 PollForSourceChanges: false
-                Branch: master
+                Branch: main
                 OAuthToken: '{{resolve:secretsmanager:/github/token:SecretString:mo-rjr}}'
               Name: extensions_src
               OutputArtifacts:
